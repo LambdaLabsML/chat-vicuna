@@ -50,7 +50,6 @@ class StopOnWords(StoppingCriteria):
         return False
 
 # stop_words = ["<|USER|>", "<|ASSISTANT|>", "<|SYSTEM|>", "</s>"]
-
 stop_words = ["<|", "</s>"]
 
 # Have to manually hardcode the ids (instead of tok.encode) because
@@ -96,7 +95,6 @@ def chat(curr_system_message, history):
     t = Thread(target=m.generate, kwargs=generate_kwargs)
     t.start()
 
-    # print(history)
     # Initialize an empty string to store the generated text
     partial_text = ""
     for new_text in streamer:
@@ -105,25 +103,15 @@ def chat(curr_system_message, history):
         if not found_keyword:
             pass
         else:
-            print('Found a piece of text that contains a stop words ---------')
-            print(new_text)
-            print('---------')
-
             matched_indices.sort(key=lambda x: x[0], reverse=True)
             for start, end in matched_indices:
                 new_text = new_text[:start] + new_text[end+1:]
 
-            print("after remove stop words:")
-            print(new_text)
-            print('---------')
         partial_text += new_text
         history[-1][1] = partial_text
         # Yield an empty string to cleanup the message textbox and the updated conversation history
         yield history
 
-    print('partial_text: -------------------')
-    print(partial_text)
-    print('---------------------------------')
     return partial_text
 
 

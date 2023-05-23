@@ -1,7 +1,6 @@
-gradio==3.29.0
+gradio==3.32.0
 transformers==4.29.2
 numpy==1.24.3
 sentencepiece==0.1.99
 protobuf==3.20.*
 xformers==0.0.19
-typing_extensions==4.5.0
