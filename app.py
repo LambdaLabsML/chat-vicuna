@@ -10,13 +10,14 @@ from threading import Thread
 model_name = "eachadea/vicuna-13b-1.1"
 
 print(f"Starting to load the model to memory")
-# m = AutoModelForCausalLM.from_pretrained(
-#     model_name, torch_dtype=torch.float16).cuda()
-# generator = pipeline('text-generation', model=m, tokenizer=tok, device=0)
 m = AutoModelForCausalLM.from_pretrained(
-    model_name, device_map='auto', load_in_8bit=True)
+    model_name, torch_dtype=torch.float16).cuda()
 tok = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-generator = pipeline('text-generation', model=m, tokenizer=tok)
+generator = pipeline('text-generation', model=m, tokenizer=tok, device=0)
+# m = AutoModelForCausalLM.from_pretrained(
+#     model_name, device_map='auto', load_in_8bit=True)
+# tok = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+# generator = pipeline('text-generation', model=m, tokenizer=tok)
 print(f"Sucessfully loaded the model to the memory")
 
 start_message = """
@@ -73,7 +74,7 @@ def user(message, history):
     return "", history + [[message, ""]]
 
 
-def chat(curr_system_message, history):
+def chat(curr_system_message, history, temperature):
 
     # Construct the input message string for the model by concatenating the current system message and conversation history
     messages = curr_system_message + \
@@ -91,7 +92,7 @@ def chat(curr_system_message, history):
         do_sample=True,
         top_p=0.95,
         top_k=1000,
-        temperature=1.0,
+        temperature=temperature,
         num_beams=1,
         stopping_criteria=stopping_criteria
     )
@@ -138,6 +139,16 @@ with gr.Blocks() as demo:
 
     chatbot = gr.Chatbot().style(height=500)
     with gr.Row():
+        temperature = gr.Slider(
+            label="Temperature",
+            value=0.1,
+            minimum=0.0,
+            maximum=1.0,
+            step=0.1,
+            interactive=True,
+            info="Higher values produce more diverse outputs",
+        )
+    with gr.Row():
         with gr.Column():
             msg = gr.Textbox(label="Chat Message Box", placeholder="Chat Message Box",
                              show_label=False).style(container=False)
@@ -146,13 +157,14 @@ with gr.Blocks() as demo:
                 submit = gr.Button("Submit")
                 stop = gr.Button("Stop")
                 clear = gr.Button("Clear")
+
     system_msg = gr.Textbox(
         start_message, label="System Message", interactive=False, visible=False)
 
     submit_event = msg.submit(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
-        fn=chat, inputs=[system_msg, chatbot], outputs=[chatbot], queue=True)
+        fn=chat, inputs=[system_msg, chatbot, temperature], outputs=[chatbot], queue=True)
     submit_click_event = submit.click(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False).then(
-        fn=chat, inputs=[system_msg, chatbot], outputs=[chatbot], queue=True)
+        fn=chat, inputs=[system_msg, chatbot, temperature], outputs=[chatbot], queue=True)
     stop.click(fn=None, inputs=None, outputs=None, cancels=[
                submit_event, submit_click_event], queue=False)
     clear.click(lambda: None, None, [chatbot], queue=False)
