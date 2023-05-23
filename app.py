@@ -10,10 +10,13 @@ from threading import Thread
 model_name = "eachadea/vicuna-13b-1.1"
 
 print(f"Starting to load the model to memory")
+# m = AutoModelForCausalLM.from_pretrained(
+#     model_name, torch_dtype=torch.float16).cuda()
+# generator = pipeline('text-generation', model=m, tokenizer=tok, device=0)
 m = AutoModelForCausalLM.from_pretrained(
-    model_name, torch_dtype=torch.float16).cuda()
+    model_name, device_map='auto', load_in_8bit=True)
 tok = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-generator = pipeline('text-generation', model=m, tokenizer=tok, device=0)
+generator = pipeline('text-generation', model=m, tokenizer=tok)
 print(f"Sucessfully loaded the model to the memory")
 
 start_message = """
@@ -117,7 +120,22 @@ def chat(curr_system_message, history):
 
 with gr.Blocks() as demo:
     # history = gr.State([])
-    gr.Markdown("## Vicuna Chat")
+    # gr.Markdown("## Vicuna Chat")
+
+    gr.HTML(
+        """
+            <div style="text-align: center; max-width: 650px; margin: 0 auto;">
+              <div>
+                <img class="logo" src="https://lambdalabs.com/hubfs/logos/lambda-logo.svg" alt="Lambda Logo"
+                    style="margin: auto; max-width: 7rem;">
+                <h1 style="font-weight: 900; font-size: 3rem;">
+                  Chat With Vicuna 13B
+                </h1>
+              </div>
+            </div>
+        """
+    )
+
     chatbot = gr.Chatbot().style(height=500)
     with gr.Row():
         with gr.Column():
@@ -139,5 +157,16 @@ with gr.Blocks() as demo:
                submit_event, submit_click_event], queue=False)
     clear.click(lambda: None, None, [chatbot], queue=False)
 
+    gr.HTML(
+        """
+            <div class="footer">
+                <p> A chatbot tries to give helpful, detailed, and polite answers to the user's questions. Gradio Demo created by <a href="https://lambdalabs.com/">Lambda</a>.</p>
+            </div>
+            <div class="acknowledgments">
+                <p> It is based on <a href="https://huggingface.co/eachadea/vicuna-13b-1.1">vicuna-13b-1.1</a>, an open-source LLM trained by fine-tuning LLaMA on user-shared conversations collected from ShareGPT. More information can be found <a href="https://vicuna.lmsys.org/">here</a>.</p>
+            </div>
+        """
+    )
+    
 demo.queue(max_size=32, concurrency_count=2)
 demo.launch()
