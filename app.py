@@ -8,6 +8,7 @@ import os
 from threading import Thread
 
 
+# Fix https://github.com/TimDettmers/bitsandbytes/issues/156
 path_bisandbytes = "/home/demo/venv/lib/python3.8/site-packages/bitsandbytes"
 if os.path.exists(path_bisandbytes):
     command = "cp " + path_bisandbytes + "/libbitsandbytes_cuda118.so " + path_bisandbytes + "/libbitsandbytes_cpu.so"
@@ -16,11 +17,6 @@ if os.path.exists(path_bisandbytes):
 model_name = "eachadea/vicuna-13b-1.1"
 
 print(f"Starting to load the model to memory")
-# m = AutoModelForCausalLM.from_pretrained(
-#     model_name, torch_dtype=torch.float16).cuda()
-# tok = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-# generator = pipeline('text-generation', model=m, tokenizer=tok, device=0)
-
 m = AutoModelForCausalLM.from_pretrained(
     model_name, device_map='auto', load_in_8bit=True)
 tok = AutoTokenizer.from_pretrained(model_name, use_fast=False)
@@ -62,15 +58,8 @@ class StopOnWords(StoppingCriteria):
 
         return False
 
-# stop_words = ["<|USER|>", "<|ASSISTANT|>", "<|SYSTEM|>", "</s>"]
 stop_words = ["<|", "</s>"]
-
-# Have to manually hardcode the ids (instead of tok.encode) because
-# 1. to skip the bos token (1)
-# 2. eachadea/vicuna-7b-1.1 has two ids (529 and 29966) for <  and that causes headaches for executing the StopOnWords function
-# stop_words_ids = [tok(stop_word, return_tensors='pt')['input_ids'].squeeze()[1:] for stop_word in stop_words]
-# stop_words_ids = [[ 29966, 29989, 11889, 29989, 29958], [ 29966, 29989, 22933,  9047, 13566, 29989, 29958], [  29966, 29989, 14816,  1254, 12665, 29989, 29958], [2]]
-
+# eachadea/vicuna-7b-1.1 has two ids (529 and 29966) for < 
 stop_words_ids = [[ 29966, 29989], [ 529, 29989], [2]]
 
 
@@ -129,8 +118,6 @@ def chat(curr_system_message, history, temperature):
 
 
 with gr.Blocks() as demo:
-    # history = gr.State([])
-    # gr.Markdown("## Vicuna Chat")
 
     gr.HTML(
         """
@@ -151,7 +138,7 @@ with gr.Blocks() as demo:
         temperature = gr.Slider(
             label="Temperature",
             value=0.1,
-            minimum=0.1,
+            minimum=0.00001,
             maximum=1.0,
             step=0.1,
             interactive=True,
