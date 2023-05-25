@@ -10,14 +10,17 @@ from threading import Thread
 model_name = "eachadea/vicuna-13b-1.1"
 
 print(f"Starting to load the model to memory")
-m = AutoModelForCausalLM.from_pretrained(
-    model_name, torch_dtype=torch.float16).cuda()
-tok = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-generator = pipeline('text-generation', model=m, tokenizer=tok, device=0)
 # m = AutoModelForCausalLM.from_pretrained(
-#     model_name, device_map='auto', load_in_8bit=True)
+#     model_name, torch_dtype=torch.float16).cuda()
 # tok = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-# generator = pipeline('text-generation', model=m, tokenizer=tok)
+# generator = pipeline('text-generation', model=m, tokenizer=tok, device=0)
+
+m = AutoModelForCausalLM.from_pretrained(
+    model_name, device_map='auto', load_in_8bit=True)
+tok = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+generator = pipeline('text-generation', model=m, tokenizer=tok)
+
+
 print(f"Sucessfully loaded the model to the memory")
 
 start_message = """
@@ -142,7 +145,7 @@ with gr.Blocks() as demo:
         temperature = gr.Slider(
             label="Temperature",
             value=0.1,
-            minimum=0.0,
+            minimum=0.1,
             maximum=1.0,
             step=0.1,
             interactive=True,
