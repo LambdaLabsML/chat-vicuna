@@ -7,6 +7,12 @@ from torch.nn import functional as F
 import os
 from threading import Thread
 
+
+path_bisandbytes = "/home/demo/venv/lib/python3.8/site-packages/bitsandbytes"
+if os.path.exists(path_bisandbytes):
+    command = "sudo cp " + path_bisandbytes + "/libbitsandbytes_cuda118.so " + path_bisandbytes + "/libbitsandbytes_cpu.so"
+    p = os.system(command)
+
 model_name = "eachadea/vicuna-13b-1.1"
 
 print(f"Starting to load the model to memory")
